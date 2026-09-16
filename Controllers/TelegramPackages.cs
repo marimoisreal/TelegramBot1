@@ -18,20 +18,4 @@ public class WebhookController : ControllerBase
         _logger = logger;
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Post([FromBody] Update update)
-    {
-        if (update.Message is { Text: not null} message)
-        {
-            _logger.LogInformation("Получено сообщение: {Text} от {ChatId}", message.Text, message.Chat.Id);
-
-            await _botClient.SendMessage(
-                chatId: message.Chat.Id,
-                text: $"Вы сказали {message.Text}"
-                );
-        }
-
-        return Ok();
-    }
-
 }

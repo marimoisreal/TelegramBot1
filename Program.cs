@@ -2,6 +2,7 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,16 +57,77 @@ app.Run();
 async Task HandleUpdateAsync(ITelegramBotClient bot, Update update, CancellationToken cancellationToken)
 {
     if (update.Message is not { } message) return;
-    if (message.Text is not { } messageText) return;
+
 
     var chatId = message.Chat.Id;
-    Console.WriteLine($"[Лог] Сообщение от {message.Chat.Username ?? chatId.ToString()}: {messageText}");
+    var username = message.Chat.Username ?? message.Chat.FirstName ?? chatId.ToString();
+    
+    if(message.Text is not { } messageText)
+    {
+        await bot.SendMessage(
+            chatId: chatId,
+            text: "Im working with text messages only!", 
+            cancellationToken: cancellationToken);
+        return;
+    }
 
-    await bot.SendMessage(
-        chatId: chatId,
-        text: $"Вы написали: {messageText}",
-        cancellationToken: cancellationToken
-    );
+    Console.WriteLine($"[Log] Message from {username}: {messageText}");
+
+    var replyKeyboardMarkup = new ReplyKeyboardMarkup(new[] {
+        new KeyboardButton[] {"/start", "/help"},
+        new KeyboardButton[] {"/info"}
+    })
+    {
+        ResizeKeyboard = true
+    };
+
+
+    switch (messageText.Trim().ToLower())
+    {
+        case "/start":
+            await bot.SendMessage(
+                chatId: chatId,
+                text: $"Hello {message.Chat.FirstName}! Can i help you? ^_^",
+                replyMarkup: replyKeyboardMarkup,
+                cancellationToken: cancellationToken
+                );
+            break;
+
+
+        case "/help":
+            await bot.SendMessage(
+                chatId: chatId,
+                text: " --Available commands:--\n\n" +
+                "/start - Start the bot\n" +
+                "/help - Show the help menu\n" +
+                "/info - Bot info",
+                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+                replyMarkup: replyKeyboardMarkup,
+                cancellationToken: cancellationToken
+                );
+            break;
+
+        case "/info":
+            await bot.SendMessage(
+                chatId: chatId,
+                text: $"That's test bot which is created only in tesc case!",
+                replyMarkup: replyKeyboardMarkup,
+                cancellationToken: cancellationToken
+                );
+            break;
+        default:
+            await bot.SendMessage(
+                chatId:chatId,
+                text: $"You wrote down default text: *{messageText}*\n\nTry to use /help to find out more commands!",
+                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+                replyMarkup: replyKeyboardMarkup,
+                cancellationToken: cancellationToken
+                );
+            break;
+
+    }
+
+
 }
 
 // 7. Логика обработки ошибок
